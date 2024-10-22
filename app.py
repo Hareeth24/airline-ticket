@@ -42,33 +42,42 @@ if 'users' not in st.session_state:
     st.session_state['users'] = [{'username': 'admin', 'password': 'admin123', 'role': 'admin'}]
 if 'current_user' not in st.session_state:
     st.session_state['current_user'] = None
+if 'page' not in st.session_state:
+    st.session_state['page'] = 'register_or_login'
 
 # Registration form
 def registration():
     st.markdown('<p class="title">User Registration</p>', unsafe_allow_html=True)
-    username = st.text_input("Username")
-    password = st.text_input("Password", type="password")
+    username = st.text_input("Username", key='register_username')
+    password = st.text_input("Password", type="password", key='register_password')
     
-    if st.button('Register', key='register', use_container_width=True):
+    if st.button('Register', key='register_button', use_container_width=True):
         if username and password:
-            st.session_state['users'].append({'username': username, 'password': password, 'role': 'user'})
-            st.success(f"User '{username}' registered successfully!")
+            # Check if user already exists
+            existing_user = next((user for user in st.session_state['users'] if user['username'] == username), None)
+            if existing_user:
+                st.error(f"User '{username}' already exists! Please sign in.")
+            else:
+                st.session_state['users'].append({'username': username, 'password': password, 'role': 'user'})
+                st.success(f"User '{username}' registered successfully!")
+                st.session_state['page'] = 'login'  # Redirect to login page after registration
         else:
             st.error("Please fill out all fields.")
 
 # User/Admin Login
 def login():
-    st.markdown('<p class="title">Login</p>', unsafe_allow_html=True)
-    username = st.text_input("Username")
-    password = st.text_input("Password", type="password")
+    st.markdown('<p class="title">Sign In</p>', unsafe_allow_html=True)
+    username = st.text_input("Username", key='login_username')
+    password = st.text_input("Password", type="password", key='login_password')
     
-    if st.button('Login', key='login', use_container_width=True):
-        for user in st.session_state['users']:
-            if user['username'] == username and user['password'] == password:
-                st.session_state['current_user'] = user
-                st.success(f"Logged in as {username}")
-                return
-        st.error("Invalid credentials!")
+    if st.button('Login', key='login_button', use_container_width=True):
+        user = next((user for user in st.session_state['users'] if user['username'] == username and user['password'] == password), None)
+        if user:
+            st.session_state['current_user'] = user
+            st.success(f"Logged in as {username}")
+            st.session_state['page'] = 'book_flight'  # Redirect to booking page after login
+        else:
+            st.error("Invalid credentials!")
 
 # Admin functionalities
 def admin_dashboard():
@@ -126,15 +135,30 @@ def generate_ticket(passenger_name, flight_name, departure, arrival, num_tickets
     st.download_button(label="Download Ticket", data=open(pdf_file, "rb"), file_name=pdf_file)
 
 # Main app logic
-if st.session_state['current_user'] is None:
-    login()
-    st.markdown("<hr>")
-    registration()
-else:
-    user = st.session_state['current_user']
-    if user['role'] == 'user':
-        book_flight()
-    elif user['role'] == 'admin':
-        admin_dashboard()
-    if st.button('Logout', key='logout', use_container_width=True):
-        st.session_state['current_user'] = None
+def main():
+    if st.session_state['current_user'] is None:
+        # Registration and Login flow
+        if st.session_state['page'] == 'register_or_login':
+            st.markdown('<p class="title">Welcome to Airline Management System</p>', unsafe_allow_html=True)
+            st.write("New user? Please register below:")
+            registration()
+            st.write("Already have an account? Sign in below:")
+            login()
+        elif st.session_state['page'] == 'login':
+            login()
+        else:
+            st.session_state['page'] = 'register_or_login'
+    else:
+        user = st.session_state['current_user']
+        if user['role'] == 'user':
+            book_flight()
+        elif user['role'] == 'admin':
+            admin_dashboard()
+
+        if st.button('Logout', key='logout', use_container_width=True):
+            st.session_state['current_user'] = None
+            st.session_state['page'] = 'register_or_login'
+
+# Run the main app
+if __name__ == "__main__":
+    main()
