@@ -39,7 +39,7 @@ st.markdown("""
 if 'flights' not in st.session_state:
     st.session_state['flights'] = []
 if 'users' not in st.session_state:
-    st.session_state['users'] = []
+    st.session_state['users'] = [{'username': 'admin', 'password': 'admin123', 'role': 'admin'}]
 if 'current_user' not in st.session_state:
     st.session_state['current_user'] = None
 
@@ -128,6 +128,8 @@ def generate_ticket(passenger_name, flight_name, departure, arrival, num_tickets
 # Main app logic
 if st.session_state['current_user'] is None:
     login()
+    st.markdown("<hr>")
+    registration()
 else:
     user = st.session_state['current_user']
     if user['role'] == 'user':
