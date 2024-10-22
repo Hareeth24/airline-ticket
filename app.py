@@ -1,5 +1,6 @@
 import streamlit as st
 from fpdf import FPDF
+from datetime import datetime
 
 # Set page layout
 st.set_page_config(page_title="Airline Management System", layout="centered")
@@ -37,7 +38,10 @@ st.markdown("""
 
 # Initialize session state
 if 'flights' not in st.session_state:
-    st.session_state['flights'] = []
+    st.session_state['flights'] = [
+        {'flight_name': 'Flight 101', 'departure': 'City A', 'arrival': 'City B', 'seats': 100},
+        {'flight_name': 'Flight 202', 'departure': 'City C', 'arrival': 'City D', 'seats': 200}
+    ]  # Added some default flights for demo
 if 'users' not in st.session_state:
     st.session_state['users'] = [{'username': 'admin', 'password': 'admin123', 'role': 'admin'}]
 if 'current_user' not in st.session_state:
@@ -105,27 +109,34 @@ def book_flight():
     if st.session_state['flights']:
         flight_options = [flight['flight_name'] for flight in st.session_state['flights']]
         selected_flight = st.selectbox("Select a Flight", flight_options)
-        passenger_name = st.text_input("Passenger Name")
-        num_tickets = st.number_input("Number of Tickets", min_value=1, max_value=10, value=1)
         
+        passenger_name = st.text_input("Passenger Name")
+        age = st.number_input("Passenger Age", min_value=1, max_value=120, value=25)
+        travel_date = st.date_input("Date of Travel", min_value=datetime.today())
+        from_location = st.text_input("From Location", value=selected_flight.split()[1])  # Default from location
+        to_location = st.text_input("To Location", value=selected_flight.split()[3])  # Default to location
+        num_tickets = st.number_input("Number of Tickets", min_value=1, max_value=10, value=1)
+
         if st.button('Book Ticket', key='book_ticket', use_container_width=True):
             # Generate PDF ticket
             flight = next(f for f in st.session_state['flights'] if f['flight_name'] == selected_flight)
-            generate_ticket(passenger_name, selected_flight, flight['departure'], flight['arrival'], num_tickets)
+            generate_ticket(passenger_name, age, travel_date, selected_flight, from_location, to_location, num_tickets)
             st.success(f"{num_tickets} ticket(s) booked for {selected_flight}!")
     else:
-        st.error("No flights available to book.")
+        st.error("No flights available to book. Please check back later or contact the admin.")
 
 # Function to generate PDF tickets
-def generate_ticket(passenger_name, flight_name, departure, arrival, num_tickets):
+def generate_ticket(passenger_name, age, travel_date, flight_name, from_location, to_location, num_tickets):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", size=12)
     
     pdf.cell(200, 10, txt=f"Flight Ticket", ln=True, align="C")
     pdf.cell(200, 10, txt=f"Passenger: {passenger_name}", ln=True, align="L")
+    pdf.cell(200, 10, txt=f"Age: {age}", ln=True, align="L")
     pdf.cell(200, 10, txt=f"Flight: {flight_name}", ln=True, align="L")
-    pdf.cell(200, 10, txt=f"From: {departure} To: {arrival}", ln=True, align="L")
+    pdf.cell(200, 10, txt=f"From: {from_location} To: {to_location}", ln=True, align="L")
+    pdf.cell(200, 10, txt=f"Date of Travel: {travel_date.strftime('%Y-%m-%d')}", ln=True, align="L")
     pdf.cell(200, 10, txt=f"Tickets: {num_tickets}", ln=True, align="L")
 
     pdf_file = f"{passenger_name}_ticket.pdf"
