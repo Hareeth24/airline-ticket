@@ -113,15 +113,21 @@ def book_flight():
         passenger_name = st.text_input("Passenger Name")
         age = st.number_input("Passenger Age", min_value=1, max_value=120, value=25)
         travel_date = st.date_input("Date of Travel", min_value=datetime.today())
-        from_location = st.text_input("From Location", value=selected_flight.split()[1])  # Default from location
-        to_location = st.text_input("To Location", value=selected_flight.split()[3])  # Default to location
+        
+        # Removing default values for from/to location
+        from_location = st.text_input("From Location")
+        to_location = st.text_input("To Location")
+        
         num_tickets = st.number_input("Number of Tickets", min_value=1, max_value=10, value=1)
 
         if st.button('Book Ticket', key='book_ticket', use_container_width=True):
-            # Generate PDF ticket
-            flight = next(f for f in st.session_state['flights'] if f['flight_name'] == selected_flight)
-            generate_ticket(passenger_name, age, travel_date, selected_flight, from_location, to_location, num_tickets)
-            st.success(f"{num_tickets} ticket(s) booked for {selected_flight}!")
+            if from_location and to_location:
+                # Generate PDF ticket
+                flight = next(f for f in st.session_state['flights'] if f['flight_name'] == selected_flight)
+                generate_ticket(passenger_name, age, travel_date, selected_flight, from_location, to_location, num_tickets)
+                st.success(f"{num_tickets} ticket(s) booked for {selected_flight}!")
+            else:
+                st.error("Please enter both 'From Location' and 'To Location'.")
     else:
         st.error("No flights available to book. Please check back later or contact the admin.")
 
